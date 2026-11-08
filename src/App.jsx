@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import NewInvoice from './NewInvoice.jsx'
-import { countInvoices, backupText, restoreFromText, requestPersist, SOFT_LIMIT } from './storage.js'
+import Archive from './Archive.jsx'
+import { countInvoices, backupText, restoreFromText, requestPersist, todayLocal, SOFT_LIMIT } from './storage.js'
 
 const TABS = [
-  { id: 'new', label: 'فاتورة جديدة', hint: '' },
-  { id: 'archive', label: 'الأرشيف', hint: 'المرحلة 4' },
-  { id: 'settings', label: 'الإعدادات', hint: 'المرحلة 6' },
+  { id: 'new', label: 'فاتورة جديدة' },
+  { id: 'archive', label: 'الأرشيف' },
+  { id: 'settings', label: 'الإعدادات' },
 ]
 
 function Logo({ size = 40 }) {
@@ -25,7 +26,7 @@ function Settings() {
     const blob = new Blob([backupText()], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `نسخة-الثقة-${new Date().toISOString().slice(0, 10)}.json`
+    a.download = `نسخة-الثقة-${todayLocal()}.json`
     a.click()
     URL.revokeObjectURL(a.href)
     setMsg('اتحملت النسخة الاحتياطية.')
@@ -34,6 +35,10 @@ function Settings() {
   async function restore(e) {
     const file = e.target.files?.[0]
     if (!file) return
+    if (!window.confirm('الاسترجاع هيستبدل الفواتير الحالية بالفواتير اللي في النسخة. متأكد؟')) {
+      e.target.value = ''
+      return
+    }
     const r = restoreFromText(await file.text())
     setMsg(r.ok ? `اتسترجع ${r.count} فاتورة.` : r.error)
     setCount(countInvoices())
@@ -60,7 +65,6 @@ function Settings() {
 export default function App() {
   useEffect(() => { requestPersist() }, [])
   const [tab, setTab] = useState('new')
-  const current = TABS.find((t) => t.id === tab)
 
   return (
     <div className="app">
@@ -81,16 +85,7 @@ export default function App() {
       </nav>
 
       <main className="content">
-        {tab === 'settings' ? (
-          <Settings />
-        ) : tab === 'new' ? (
-          <NewInvoice />
-        ) : (
-          <section className="panel">
-            <h2>{current.label}</h2>
-            <p>الشاشة دي لسه فاضية، هتتبني في {current.hint}.</p>
-          </section>
-        )}
+        {tab === 'settings' ? <Settings /> : tab === 'archive' ? <Archive /> : <NewInvoice />}
       </main>
     </div>
   )
