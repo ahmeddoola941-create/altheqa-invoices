@@ -82,3 +82,28 @@ body {
 .btn:focus-within, .btn:focus-visible { outline: 3px solid var(--gold-soft); outline-offset: 2px; }
 .msg { color: var(--gold-soft); }
 .note { font-size: .9rem; margin-top: 12px; }
+
+/* ---- شاشة الفاتورة ---- */
+.meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+.meta-box { background: var(--black); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.meta-box span { display: block; font-size: .8rem; color: var(--muted); }
+.meta-box strong { color: var(--gold-soft); font-size: 1.15rem; }
+
+.field { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.field > span { font-size: .8rem; color: var(--muted); }
+.field input, .field output {
+  min-height: 44px; width: 100%; padding: 0 10px;
+  background: var(--black); color: var(--text);
+  border: 1px solid var(--line); border-radius: 8px;
+  font: 600 1rem var(--font);
+}
+.field input:focus { outline: 2px solid var(--gold); border-color: var(--gold); }
+.field output { display: flex; align-items: center; color: var(--gold-soft); border-style: dashed; }
+.f-qty input, .f-price input { text-align: center; }
+
+.rows { display: grid; gap: 10px; margin-top: 14px; }
+.row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  background: var(--black); border: 1px solid var(--line); border-radius: 10px; padding: 10px;
+}
+.row-head { grid-column: 1 / -1; display: flex; justify-content: space-between; align-item
