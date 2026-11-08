@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { peekNextNumber, createInvoice, todayLocal } from './storage.js'
+import { peekNextNumber, createInvoice, updateInvoice, todayLocal } from './storage.js'
+import ExportButtons from './ExportButtons.jsx'
 import { toNumber, lineTotal, invoiceTotal, formatMoney, isFilled } from './calc.js'
 
 const MIN_ROWS = 5
@@ -9,19 +10,29 @@ const UNITS = ['قطعة', 'متر', 'متر مربع', 'طقم', 'علبة', '�
 let nextId = 1
 const newRow = () => ({ id: nextId++, name: '', unit: '', qty: '', price: '' })
 const startRows = () => Array.from({ length: MIN_ROWS }, newRow)
+const rowsFrom = (items) => {
+  const rs = (items || []).map((it) => ({
+    id: nextId++, name: it.name || '', unit: it.unit || '', qty: String(it.qty ?? ''), price: String(it.price ?? ''),
+  }))
+  while (rs.length < MIN_ROWS) rs.push(newRow())
+  return rs
+}
 
-export default function NewInvoice() {
-  const [client, setClient] = useState('')
-  const [rows, setRows] = useState(startRows)
-  const [number, setNumber] = useState(peekNextNumber)
+export default function NewInvoice({ invoice, onSaved, onCancel }) {
+  const editing = Boolean(invoice)
+  const [client, setClient] = useState(invoice?.client || '')
+  const [rows, setRows] = useState(() => (invoice ? rowsFrom(invoice.items) : startRows()))
+  const [number, setNumber] = useState(() => (invoice ? invoice.number : peekNextNumber()))
   const [error, setError] = useState('')
   const [done, setDone] = useState('')
+  const [lastSaved, setLastSaved] = useState(null)
 
   const total = invoiceTotal(rows)
 
   function change(id, field, value) {
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, [field]: value } : r)))
     setDone('')
+    setLastSaved(null)
   }
 
   function addRow() {
@@ -39,6 +50,7 @@ export default function NewInvoice() {
     for (const { r, n } of filled) {
       if (!r.name.trim()) return setError(`الصف ${n}: اكتب اسم الصنف.`)
       if (toNumber(r.qty) <= 0) return setError(`الصف ${n}: اكتب العدد.`)
+      if (String(r.price).trim() === '') return setError(`الصف ${n}: اكتب سعر الوحدة (اكتب 0 لو من غير سعر).`)
     }
     const items = filled.map(({ r }) => ({
       name: r.name.trim(),
@@ -47,9 +59,12 @@ export default function NewInvoice() {
       price: toNumber(r.price),
       total: lineTotal(r),
     }))
-    const saved = createInvoice({ client: client.trim(), items, total: invoiceTotal(rows) })
+    const data = { client: client.trim(), items, total: invoiceTotal(rows) }
+    const saved = editing ? updateInvoice(invoice.id, data) : createInvoice(data)
     if (!saved) return setError('معرفتش أحفظ الفاتورة، المساحة على الجهاز يمكن امتلت.')
+    if (editing) return onSaved?.(saved)
     setDone(`اتحفظت فاتورة رقم ${saved.number} بإجمالي ${formatMoney(saved.total)}`)
+    setLastSaved(saved)
     setClient('')
     setRows(startRows())
     setNumber(peekNextNumber())
@@ -57,7 +72,7 @@ export default function NewInvoice() {
 
   return (
     <section className="panel invoice">
-      <h2>فاتورة جديدة</h2>
+      <h2>{editing ? `تعديل فاتورة ${number}` : 'فاتورة جديدة'}</h2>
 
       <div className="meta">
         <div className="meta-box">
@@ -66,7 +81,7 @@ export default function NewInvoice() {
         </div>
         <div className="meta-box">
           <span>التاريخ</span>
-          <strong>{todayLocal()}</strong>
+          <strong>{editing ? invoice.date : todayLocal()}</strong>
         </div>
       </div>
 
@@ -123,9 +138,11 @@ export default function NewInvoice() {
 
       {error && <p className="error" role="alert">{error}</p>}
       {done && <p className="msg" role="status">{done}</p>}
+      {done && lastSaved && <ExportButtons invoice={lastSaved} />}
 
       <div className="actions">
-        <button type="button" className="btn" onClick={save}>حفظ الفاتورة</button>
+        <button type="button" className="btn" onClick={save}>{editing ? 'حفظ التعديلات' : 'حفظ الفاتورة'}</button>
+        {editing && <button type="button" className="btn ghost" onClick={onCancel}>إلغاء</button>}
       </div>
     </section>
   )
