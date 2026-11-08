@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
+import NewInvoice from './NewInvoice.jsx'
 import { countInvoices, backupText, restoreFromText, requestPersist, SOFT_LIMIT } from './storage.js'
 
 const TABS = [
-  { id: 'new', label: 'فاتورة جديدة', hint: 'المرحلة 3' },
+  { id: 'new', label: 'فاتورة جديدة', hint: '' },
   { id: 'archive', label: 'الأرشيف', hint: 'المرحلة 4' },
   { id: 'settings', label: 'الإعدادات', hint: 'المرحلة 6' },
 ]
@@ -82,6 +83,8 @@ export default function App() {
       <main className="content">
         {tab === 'settings' ? (
           <Settings />
+        ) : tab === 'new' ? (
+          <NewInvoice />
         ) : (
           <section className="panel">
             <h2>{current.label}</h2>
