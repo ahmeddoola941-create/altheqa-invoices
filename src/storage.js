@@ -29,6 +29,13 @@ function save(db) {
 
 const pad = (n) => String(n).padStart(4, '0')
 
+// تاريخ النهاردة بتوقيت الجهاز (مش UTC)، عشان بعد 12 بالليل ما يطلعش تاريخ امبارح
+export function todayLocal() {
+  const d = new Date()
+  const p2 = (x) => String(x).padStart(2, '0')
+  return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`
+}
+
 // الرقم بيزيد دايمًا ومبيتكررش حتى لو مسحت فاتورة
 export function peekNextNumber() {
   return pad(load().counter + 1)
@@ -50,7 +57,7 @@ export function createInvoice(data) {
     ...data,
     id: `${Date.now()}-${db.counter}`,
     number: pad(db.counter),
-    date: now.slice(0, 10), // تاريخ تلقائي
+    date: todayLocal(), // تاريخ تلقائي
     createdAt: now,
     updatedAt: now,
   }
