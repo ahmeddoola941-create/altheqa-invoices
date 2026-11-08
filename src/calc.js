@@ -5,7 +5,9 @@ const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩'
 // يقبل أرقام عربي أو إنجليزي، وفاصلة أو نقطة
 export function toNumber(v) {
   if (v === null || v === undefined) return 0
-  const s = String(v)
+  const raw = String(v).trim()
+  if (raw.startsWith('-') || raw.startsWith('−')) return 0 // السالب مرفوض
+  const s = raw
     .replace(/[٠-٩]/g, (d) => String(AR_DIGITS.indexOf(d)))
     .replace(/[٫,،]/g, '.')
     .replace(/[^\d.]/g, '')
