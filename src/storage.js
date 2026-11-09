@@ -103,4 +103,25 @@ export function backupText() {
   return JSON.stringify(load(), null, 2)
 }
 
-export function restoreFromText(text)
+export function restoreFromText(text) {
+  let db
+  try {
+    db = JSON.parse(text)
+  } catch {
+    return { ok: false, error: 'الملف مش نسخة احتياطية صالحة.' }
+  }
+  if (!db || !Array.isArray(db.invoices) || typeof db.counter !== 'number') {
+    return { ok: false, error: 'الملف مش نسخة احتياطية صالحة.' }
+  }
+  const maxNum = db.invoices.reduce((m, i) => Math.max(m, parseInt(i.number, 10) || 0), 0)
+  db.counter = Math.max(db.counter, maxNum, load().counter) // مفيش رقم يتكرر حتى لو النسخة قديمة
+  return save(db) ? { ok: true, count: db.invoices.length } : { ok: false, error: 'مفيش مساحة كفاية للحفظ.' }
+}
+
+// يطلب من المتصفح ما يمسحش البيانات لوحده
+export async function requestPersist() {
+  try {
+    if (navigator.storage?.persist) return await navigator.storage.persist()
+  } catch {}
+  return false
+}

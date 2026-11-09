@@ -138,7 +138,7 @@ export default function NewInvoice({ invoice, onSaved, onCancel }) {
 
       {error && <p className="error" role="alert">{error}</p>}
       {done && <p className="msg" role="status">{done}</p>}
-      {done && lastSaved && <ExportButtons invoice={lastSaved} />}
+      {done && lastSaved && <ExportButtons key={lastSaved.id} invoice={lastSaved} autoShow />}
 
       <div className="actions">
         <button type="button" className="btn" onClick={save}>{editing ? 'حفظ التعديلات' : 'حفظ الفاتورة'}</button>

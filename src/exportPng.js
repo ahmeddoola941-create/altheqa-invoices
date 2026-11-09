@@ -218,4 +218,78 @@ export function renderInvoice(inv, makeCanvas) {
   ctx.fillStyle = TEXT
   ctx.textAlign = 'right'
   ctx.font = f(700, 24)
-  ctx.fillText('إجمالي
+  ctx.fillText('إجمالي الفاتورة', R - 20, y + TOTAL_H / 2 + 1)
+  ctx.fillStyle = GOLD
+  ctx.textAlign = 'left'
+  ctx.font = f(900, 38)
+  ctx.fillText(formatMoney(inv.total || 0), L + 20, y + TOTAL_H / 2 + 1)
+  y += TOTAL_H
+
+  // الفوتر
+  ctx.fillStyle = MUTED
+  ctx.textAlign = 'center'
+  ctx.font = f(600, 16)
+  ctx.fillText('شكرًا لتعاملكم معنا', W / 2, y + FOOT_H / 2 + 4)
+
+  return canvas
+}
+
+// ---------- جزء المتصفح ----------
+const browserCanvas = (w, h) => {
+  const c = document.createElement('canvas')
+  c.width = w
+  c.height = h
+  return c
+}
+
+async function loadFonts() {
+  try {
+    if (document.fonts?.load) {
+      await Promise.all(
+        ['600 18px Cairo', '700 18px Cairo', '900 30px Cairo'].map((s) => document.fonts.load(s, 'ثأ1'))
+      )
+    }
+  } catch {}
+}
+
+export async function invoiceToBlob(inv) {
+  await loadFonts()
+  const canvas = renderInvoice(inv, browserCanvas)
+  return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'))
+}
+
+const fileName = (inv) => `فاتورة-${inv.number}.png`
+
+export async function downloadInvoicePng(inv) {
+  const blob = await invoiceToBlob(inv)
+  if (!blob) return false
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = fileName(inv)
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000)
+  return true
+}
+
+export function canShareFiles() {
+  try {
+    return Boolean(navigator.canShare) && navigator.canShare({ files: [new File(['x'], 'a.png', { type: 'image/png' })] })
+  } catch {
+    return false
+  }
+}
+
+export async function shareInvoicePng(inv) {
+  const blob = await invoiceToBlob(inv)
+  if (!blob) return false
+  const file = new File([blob], fileName(inv), { type: 'image/png' })
+  if (!navigator.canShare?.({ files: [file] })) return false
+  try {
+    await navigator.share({ files: [file], title: `فاتورة ${inv.number}` })
+  } catch (e) {
+    if (e?.name !== 'AbortError') throw e // لو قفل نافذة المشاركة بنفسه مش خطأ
+  }
+  return true
+}
